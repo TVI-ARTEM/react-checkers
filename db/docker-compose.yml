@@ -1,0 +1,15 @@
+services:
+  checkers_db:
+    container_name: checkers_db
+    image: postgres:14.5
+    restart: always
+    environment:
+      POSTGRES_DB: "checkers_db"
+      POSTGRES_USER: "checkers_user"
+      POSTGRES_PASSWORD: "checkers_password"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ./docker/db/scripts/initialize.sql:/docker-entrypoint-initdb.d/initialize.sql
+      - ./dz:/var/lib/postgresql/data
+    ports:
+      - "6001:5432"
