@@ -1,0 +1,26 @@
+.image-background {
+    background-image: url("images/messi_ronaldo.jpg");
+    height: 100vh;
+    background-position: center;
+    background-size: cover;
+    background-repeat: repeat;
+}
+
+.roboto-text-regular{
+    font-family: "Roboto", sans-serif;
+    text-align: left;
+    font-weight: bold;
+    color: white;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+.container {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
