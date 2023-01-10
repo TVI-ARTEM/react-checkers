@@ -1,8 +1,8 @@
-import {$authHost, $host} from "./index";
+import {$authHost} from "./index";
 
-export const updateWinner = async (email: string, password: string) => {
+export const updateWinner = async (email: string) => {
     console.log('update-winners')
-    await $host.post('api/winner/update-winner', {email: email})
+    await $authHost.post('api/winner/update-winner', {email: email})
     return
 }
 

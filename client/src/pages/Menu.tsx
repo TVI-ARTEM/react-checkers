@@ -5,9 +5,24 @@ import {IUser, UserStoreContextType} from "../store/UserStore";
 import {Button, Col, Container, Form, ListGroup, Modal, Navbar, Row, Stack} from "react-bootstrap";
 import './Menu.css';
 import {useNavigate} from "react-router-dom";
-import {AUTH_ROUTE, GAME_ROUTE, MENU_ROUTE} from "../utils/consts";
+import {
+    AUTH_ROUTE,
+    COOP_STYLE_COOP_VALUE,
+    COOP_STYLE_SOLO_VALUE,
+    DIFFICULT_EASY_VALUE, DIFFICULT_PRO_VALUE,
+    GAME_MODE_1_KINGS_VALUE, GAME_MODE_2_KINGS_VALUE,
+    GAME_MODE_3_CHECKERS_VALUE, GAME_MODE_3_KINGS_VALUE,
+    GAME_MODE_STANDARD_VALUE,
+    GAME_ROUTE,
+    MENU_ROUTE,
+    PC_PLAYERS_0_VALUE,
+    PC_PLAYERS_1_VALUE,
+    PC_PLAYERS_2_VALUE,
+    PC_PLAYERS_3_VALUE
+} from "../utils/consts";
 import houseImgPath from "./images/logo.png";
 import {getWinners} from "../http/winnerApi";
+import {createRoom, joinRoom} from "../http/roomApi";
 
 
 const Menu = observer(() => {
@@ -19,10 +34,10 @@ const Menu = observer(() => {
     const [room_id, setRoomID] = useState('')
     const [room_password, setRoomPassword] = useState('')
 
-    const [pc_players, setPCPlayers] = useState('0')
-    const [multiplayer, setMultiplayer] = useState('solo')
-    const [gameMode, setGameMode] = useState('standard')
-    const [difficult, setDifficult] = useState('easy')
+    const [pc_players, setPCPlayers] = useState(PC_PLAYERS_0_VALUE)
+    const [multiplayer, setMultiplayer] = useState(COOP_STYLE_SOLO_VALUE)
+    const [gameMode, setGameMode] = useState(GAME_MODE_STANDARD_VALUE)
+    const [difficult, setDifficult] = useState(DIFFICULT_EASY_VALUE)
 
     const [show, setShow] = useState(false)
     const [showMessage, setShowMessage] = useState('')
@@ -82,17 +97,17 @@ const Menu = observer(() => {
                     </Row>
                     <Row>
                         <Col style={{marginInline: "25%"}}>
-                            <Form onSubmit={(event) => {
-                                event.preventDefault()
-                                if (room_id_join.length !== 8) {
-                                    setShowMessage('Length of Room id must be equal 8')
+                            <Form onSubmit={async (event) => {
+                                try {
+                                    event.preventDefault()
+                                    let data;
+                                    data = await joinRoom(room_id_join, room_password_join);
+                                    console.log(data)
+                                    navigate(GAME_ROUTE)
+                                } catch (error: any) {
+                                    setShowMessage(error.response.data.message)
                                     setShow(true)
-                                    return;
                                 }
-                                console.log(room_id_join)
-                                console.log(room_password_join)
-
-                                navigate(GAME_ROUTE)
                             }}>
                                 <Stack gap={2}>
                                     <label className={'roboto-text-regular'}>
@@ -135,21 +150,18 @@ const Menu = observer(() => {
                     Creating Room
                 </Modal.Header>
                 <Modal.Body>
-                    <Form className={'align-self-center'} onSubmit={(event) => {
-                        event.preventDefault()
-                        if (room_id.length !== 8) {
-                            setShowMessage('Length of Room id must be equal 8')
+                    <Form className={'align-self-center'} onSubmit={async (event) => {
+                        try {
+                            event.preventDefault()
+                            let data;
+                            data = await createRoom(room_id, room_password, pc_players, multiplayer, gameMode, difficult);
+                            console.log(data)
+                            setShowCreateRoom(false)
+                            navigate(GAME_ROUTE)
+                        } catch (error: any) {
+                            setShowMessage(error.response.data.message)
                             setShow(true)
-                            return;
                         }
-                        console.log(room_id)
-                        console.log(room_password)
-                        console.log(pc_players)
-                        console.log(multiplayer)
-                        console.log(gameMode)
-                        console.log(difficult)
-                        setShowCreateRoom(false)
-                        navigate(GAME_ROUTE)
                     }}>
                         <Stack gap={2}>
                             <label className={'roboto-text-regular'} style={{color: "black"}}>
@@ -171,37 +183,37 @@ const Menu = observer(() => {
                             </label>
                             <select className={'form-select'}
                                     onChange={(event) => setPCPlayers(event.target.value)}>
-                                <option value="0">Only Real Players</option>
-                                <option value="1">1 PC Player</option>
-                                <option value="2">2 PC Players</option>
-                                <option value="3">3 PC Players</option>
+                                <option value={PC_PLAYERS_0_VALUE}>Only Real Players</option>
+                                <option value={PC_PLAYERS_1_VALUE}>1 PC Player</option>
+                                <option value={PC_PLAYERS_2_VALUE}>2 PC Players</option>
+                                <option value={PC_PLAYERS_3_VALUE}>3 PC Players</option>
                             </select>
                             <label className={'roboto-text-regular'} style={{color: "black"}}>
                                 Coop Style:
                             </label>
                             <select className={'form-select'}
                                     onChange={(event) => setMultiplayer(event.target.value)}>
-                                <option value="solo">Solo</option>
-                                <option value="coop">Co-op</option>
+                                <option value={COOP_STYLE_SOLO_VALUE}>Solo</option>
+                                <option value={COOP_STYLE_COOP_VALUE}>Co-op</option>
                             </select>
                             <label className={'roboto-text-regular'} style={{color: "black"}}>
                                 Game mode:
                             </label>
                             <select className={'form-select'}
                                     onChange={(event) => setGameMode(event.target.value)}>
-                                <option value="standard">Standard</option>
-                                <option value="3_checkers">3 Checkers</option>
-                                <option value="1_kings">1 King</option>
-                                <option value="2_kings">2 Kings</option>
-                                <option value="3_kings">3 Kings</option>
+                                <option value={GAME_MODE_STANDARD_VALUE}>Standard</option>
+                                <option value={GAME_MODE_3_CHECKERS_VALUE}>3 Checkers</option>
+                                <option value={GAME_MODE_1_KINGS_VALUE}>1 King</option>
+                                <option value={GAME_MODE_2_KINGS_VALUE}>2 Kings</option>
+                                <option value={GAME_MODE_3_KINGS_VALUE}>3 Kings</option>
                             </select>
                             <label className={'roboto-text-regular'} style={{color: "black"}}>
                                 Difficult:
                             </label>
                             <select className={'form-select'}
                                     onChange={(event) => setDifficult(event.target.value)}>
-                                <option value="easy">Easy</option>
-                                <option value="pro">Pro</option>
+                                <option value={DIFFICULT_EASY_VALUE}>Easy</option>
+                                <option value={DIFFICULT_PRO_VALUE}>Pro</option>
                             </select>
                             <Button variant={'danger'} type={'submit'} className={'align-self-center'}
                                     style={{width: "50%"}}>Create Room</Button>
@@ -217,7 +229,7 @@ const Menu = observer(() => {
                 <Modal.Body>
                     <ListGroup>
                         {
-                           bestPlayer.map((item, idx) =>
+                            bestPlayer.map((item, idx) =>
                                 <ListGroup.Item className={'roboto-text-regular'} style={{color: "black"}}
                                                 key={idx}>{idx + 1}. {item.email}: {item.count}</ListGroup.Item>
                             )

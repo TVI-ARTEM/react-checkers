@@ -1,8 +1,3 @@
-export const AUTH_ROUTE = '/auth'
-export const GAME_ROUTE = '/game'
-export const LOADING_ROUTE = '/loading'
-export const MENU_ROUTE = '/menu'
-
 export const PC_PLAYERS_0_VALUE = '0'
 export const PC_PLAYERS_1_VALUE = '1'
 export const PC_PLAYERS_2_VALUE = '2'
