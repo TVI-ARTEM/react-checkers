@@ -1,11 +1,13 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {Context} from "../index";
-import {UserStoreContextType} from "../store/UserStore";
+import {UserStoreContextType, IUser} from "../store/UserStore";
 import {observer} from "mobx-react-lite";
 import {useNavigate} from "react-router-dom";
-import {GAME_ROUTE, MENU_ROUTE} from "../utils/consts";
-import {Button, Card, Col, Container, Form, Navbar, Row, Stack} from "react-bootstrap";
+import { MENU_ROUTE} from "../utils/consts";
+import {Container, Form, Navbar, Stack} from "react-bootstrap";
 import houseImgPath from "./images/logo.png";
+import {login, registration} from "../http/userApi";
+
 
 const Auth = observer(() => {
 
@@ -15,8 +17,15 @@ const Auth = observer(() => {
     const state = {
         button: 1
     }
-
     const navigate = useNavigate()
+
+    useEffect(() => {
+        if (user.isAuth) {
+            navigate(MENU_ROUTE)
+        }
+    }, [])
+
+
     return (
         <>
             <Navbar fixed={'top'} bg={'dark'}>
@@ -30,73 +39,8 @@ const Auth = observer(() => {
                             alt={''}/>{' '}Checkers</Navbar.Brand>
                 </Container>
             </Navbar>
-
-            {/*<div className={'image-background d-flex justify-content-center align-items-center'}>*/}
-            {/*    <Card style={{backgroundColor: "#1E1E1E", borderRadius: "1rem", width: "50vw"}}>*/}
-            {/*        <Container style={{}}>*/}
-            {/*            <Row>*/}
-            {/*                <Col className='roboto-text-regular' style={{fontSize: "3vw"}}>*/}
-
-            {/*                        <Form onSubmit={(event) => {*/}
-            {/*                            event.preventDefault()*/}
-            {/*                            user.isAuth = true*/}
-            {/*                            if (state.button === 1) {*/}
-            {/*                                console.log('login')*/}
-            {/*                            } else {*/}
-            {/*                                console.log('sign up')*/}
-            {/*                            }*/}
-            {/*                            console.log(user.isAuth)*/}
-            {/*                            console.log(email)*/}
-            {/*                            console.log(password)*/}
-            {/*                            navigate(MENU_ROUTE)*/}
-            {/*                        }}>*/}
-            {/*                            <Stack gap={2}>*/}
-            {/*                                <label className={'text-center'}>Login</label>*/}
-
-            {/*                                <label className={'roboto-text-regular'} style={{fontSize: "1vw"}}>*/}
-            {/*                                    Email:*/}
-            {/*                                </label>*/}
-
-            {/*                                <input type={'text'} placeholder={'Enter Email'}*/}
-            {/*                                       className={'form-control '}*/}
-            {/*                                       onChange={(event) => setEmail(event.target.value)}*/}
-            {/*                                       required></input>*/}
-            {/*                                <label className={'roboto-text-regular'} style={{fontSize: "1vw"}}>*/}
-            {/*                                    Password:*/}
-            {/*                                </label>*/}
-            {/*                                <input type={'password'} placeholder={'Enter Password'}*/}
-            {/*                                       className={'form-control '}*/}
-            {/*                                       onChange={(event) => setPassword(event.target.value)}*/}
-            {/*                                       required></input>*/}
-
-            {/*                                <div className={'mb-md-2'}></div>*/}
-
-            {/*                                <button className="btn btn-outline-light btn-lg px-5 align-self-center" type="submit"*/}
-            {/*                                        style={{width: "10vw"}}*/}
-            {/*                                        onClick={() => state.button = 1}>*/}
-            {/*                                    Login*/}
-            {/*                                </button>*/}
-            {/*                                <div className={'mb-md-2'}></div>*/}
-
-            {/*                                <button className="btn btn-outline-light btn-lg px-5 align-self-center" type="submit"*/}
-            {/*                                        style={{width: "50%"}}*/}
-            {/*                                        onClick={() => state.button = 2}>*/}
-            {/*                                    Sign up*/}
-            {/*                                </button>*/}
-            {/*                                <div className={'mb-md-2'}></div>*/}
-
-            {/*                            </Stack>*/}
-            {/*                        </Form>*/}
-            {/*                </Col>*/}
-            {/*            </Row>*/}
-
-            {/*        </Container>*/}
-
-            {/*    </Card>*/}
-
-            {/*</div>*/}
-         <div className={'image-background'}>
-                <section className="vh-100 gradient-custom" >
+            <div className={'image-background'}>
+                <section className="vh-100 gradient-custom">
                     <div className="container py-5 h-100">
                         <div className="row d-flex justify-content-center align-items-center h-100">
                             <div className="col-12 col-md-8 col-lg-6 col-xl-5">
@@ -108,18 +52,22 @@ const Auth = observer(() => {
                                             <p className="text-white-50 mb-5">Please enter your login and password!</p>
 
 
-                                            <Form onSubmit={(event) => {
-                                                event.preventDefault()
-                                                user.isAuth = true
-                                                if (state.button === 1) {
-                                                    console.log('login')
-                                                } else {
-                                                    console.log('sign up')
+                                            <Form onSubmit={async (event) => {
+                                                try {
+                                                    event.preventDefault()
+                                                    let data;
+                                                    if (state.button === 1) {
+                                                        data = await login(email, password);
+                                                    } else {
+                                                        data = await registration(email, password);
+                                                    }
+                                                    user.user = data as IUser
+                                                    user.isAuth = true
+                                                    navigate(MENU_ROUTE)
+                                                } catch (e: any) {
+                                                    alert(e.response.data.message)
                                                 }
-                                                console.log(user.isAuth)
-                                                console.log(email)
-                                                console.log(password)
-                                                navigate(MENU_ROUTE)
+
                                             }}>
                                                 <Stack gap={2}>
                                                     <label className={'roboto-text-regular'}>
@@ -140,16 +88,20 @@ const Auth = observer(() => {
 
                                                     <div className={'mb-md-2'}></div>
 
-                                                    <button className="btn btn-outline-light btn-lg px-5 align-self-center" type="submit"
-                                                            style={{width: "95%"}}
-                                                            onClick={() => state.button = 1}>
+                                                    <button
+                                                        className="btn btn-outline-light btn-lg px-5 align-self-center"
+                                                        type="submit"
+                                                        style={{width: "95%"}}
+                                                        onClick={() => state.button = 1}>
                                                         Login
                                                     </button>
                                                     <div className={'mb-md-2'}></div>
 
-                                                    <button className="btn btn-outline-light btn-lg px-5 align-self-center" type="submit"
-                                                            style={{width: "95%"}}
-                                                            onClick={() => state.button = 2}>
+                                                    <button
+                                                        className="btn btn-outline-light btn-lg px-5 align-self-center"
+                                                        type="submit"
+                                                        style={{width: "95%"}}
+                                                        onClick={() => state.button = 2}>
                                                         Sign up
                                                     </button>
                                                 </Stack>

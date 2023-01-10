@@ -1,15 +1,24 @@
-import React, {useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {observer} from "mobx-react-lite";
 import './Game.css';
 import {Button, Card, Container, Modal, Nav, Navbar, Row, Stack} from "react-bootstrap";
 import {useNavigate} from "react-router-dom";
-import {MENU_ROUTE} from "../utils/consts";
+import {AUTH_ROUTE, MENU_ROUTE} from "../utils/consts";
 import houseImgPath from './images/logo.png'
+import {Context} from "../index";
+import {UserStoreContextType} from "../store/UserStore";
 
 
 const Game = observer(() => {
+    const {user} = useContext(Context) as UserStoreContextType
     const navigate = useNavigate()
     const [modalShow, setModalShow] = useState(false)
+
+    useEffect(() => {
+        if (!user.isAuth) {
+            navigate(AUTH_ROUTE)
+        }
+    }, [])
     return (
         <>
             <Navbar fixed={'top'} bg={'dark'}>

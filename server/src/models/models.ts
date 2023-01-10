@@ -8,7 +8,8 @@ export const User = sequelize.define('user', {
 })
 
 export const GameWinner = sequelize.define('winner', {
-    id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true}
+    id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
+    count: {type: DataTypes.INTEGER, defaultValue: 1}
 })
 
 

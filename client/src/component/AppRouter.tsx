@@ -17,11 +17,11 @@ const AppRouter = observer( () => {
         ({path, Component}) =>
             <Route path={path} key={path} element={<Component/>}/>
     )
-    console.log(user.isAuth)
+
     return (
         <>
             <Routes>
-                {authComponents}
+                {user.isAuth && authComponents}
                 {publicComponents}
                 <Route path="*" element={
                     <Navigate to={user.isAuth ? MENU_ROUTE : AUTH_ROUTE} replace={true}/>

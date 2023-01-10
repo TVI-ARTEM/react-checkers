@@ -1,12 +1,13 @@
-import React, {useContext, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {observer} from "mobx-react-lite";
 import {Context} from "../index";
-import {UserStoreContextType} from "../store/UserStore";
+import {IUser, UserStoreContextType} from "../store/UserStore";
 import {Button, Col, Container, Form, ListGroup, Modal, Navbar, Row, Stack} from "react-bootstrap";
 import './Menu.css';
 import {useNavigate} from "react-router-dom";
-import {GAME_ROUTE, MENU_ROUTE} from "../utils/consts";
+import {AUTH_ROUTE, GAME_ROUTE, MENU_ROUTE} from "../utils/consts";
 import houseImgPath from "./images/logo.png";
+import {getWinners} from "../http/winnerApi";
 
 
 const Menu = observer(() => {
@@ -20,6 +21,7 @@ const Menu = observer(() => {
 
     const [pc_players, setPCPlayers] = useState('0')
     const [multiplayer, setMultiplayer] = useState('solo')
+    const [gameMode, setGameMode] = useState('standard')
     const [difficult, setDifficult] = useState('easy')
 
     const [show, setShow] = useState(false)
@@ -29,8 +31,18 @@ const Menu = observer(() => {
     const [showRatings, setShowRatings] = useState(false)
 
     const navigate = useNavigate()
-    const initPlayer = ['First', 'Second', "Third", "F", "F", "S", "S", "E", "N", "T"]
-    const [bestPlayer, setBestPlayer] = useState(initPlayer)
+
+    const [bestPlayer, setBestPlayer] = useState(new Array<{ email: string, count: number }>())
+
+    useEffect(() => {
+        if (!user.isAuth) {
+            navigate(AUTH_ROUTE)
+        }
+    }, [])
+
+    useEffect(() => {
+        getWinners().then(winners => setBestPlayer(winners as [{ email: string, count: number }]))
+    }, [])
 
 
     return (
@@ -48,7 +60,14 @@ const Menu = observer(() => {
                         <Button onClick={() => setShowCreateRoom(true)} variant={'light'}
                                 style={{marginRight: "0.5rem"}}>Create Room</Button>
                         <Button onClick={() => setShowRatings(true)} variant={'light'}
-                                style={{marginLeft: "0.5rem"}}>Ratings</Button>
+                                style={{marginLeft: "0.5rem", marginRight: "0.5rem"}}>Ratings</Button>
+                        <Button onClick={() => {
+                            user.user = {} as IUser
+                            user.isAuth = false
+                            localStorage.setItem('token', '')
+                            navigate(AUTH_ROUTE)
+                        }} variant={'danger'}
+                                style={{marginLeft: "0.5rem"}}>Logout</Button>
                     </div>
 
                 </Container>
@@ -127,6 +146,7 @@ const Menu = observer(() => {
                         console.log(room_password)
                         console.log(pc_players)
                         console.log(multiplayer)
+                        console.log(gameMode)
                         console.log(difficult)
                         setShowCreateRoom(false)
                         navigate(GAME_ROUTE)
@@ -168,6 +188,17 @@ const Menu = observer(() => {
                                 Game mode:
                             </label>
                             <select className={'form-select'}
+                                    onChange={(event) => setGameMode(event.target.value)}>
+                                <option value="standard">Standard</option>
+                                <option value="3_checkers">3 Checkers</option>
+                                <option value="1_kings">1 King</option>
+                                <option value="2_kings">2 Kings</option>
+                                <option value="3_kings">3 Kings</option>
+                            </select>
+                            <label className={'roboto-text-regular'} style={{color: "black"}}>
+                                Difficult:
+                            </label>
+                            <select className={'form-select'}
                                     onChange={(event) => setDifficult(event.target.value)}>
                                 <option value="easy">Easy</option>
                                 <option value="pro">Pro</option>
@@ -186,17 +217,17 @@ const Menu = observer(() => {
                 <Modal.Body>
                     <ListGroup>
                         {
-                            bestPlayer.map((item, idx) =>
+                           bestPlayer.map((item, idx) =>
                                 <ListGroup.Item className={'roboto-text-regular'} style={{color: "black"}}
-                                                key={idx}>{idx + 1}. {item}</ListGroup.Item>
+                                                key={idx}>{idx + 1}. {item.email}: {item.count}</ListGroup.Item>
                             )
                         }
                     </ListGroup>
 
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => {
-                        setBestPlayer(initPlayer)
+                    <Button variant="secondary" onClick={async () => {
+                        getWinners().then(winners => setBestPlayer(winners as [{ email: string, count: number }]))
                     }}>Refresh</Button>
                     <Button variant="danger" onClick={() => setShowRatings(false)}>OK</Button>
                 </Modal.Footer>

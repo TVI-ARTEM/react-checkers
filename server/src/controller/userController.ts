@@ -1,7 +1,7 @@
 import {Request, Response, NextFunction} from 'express';
-
-import {ApiError} from "../error/ApiError";
 import {User} from '../models/models';
+import ApiError from "../error/ApiError";
+
 
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
@@ -14,6 +14,16 @@ const generateToken = (id: number, email: string) => {
     )
 }
 
+const checkEmail = (email: string) => {
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+
+    return email.match(emailRegex)
+}
+
+const checkPassword = (password: string) => {
+    return password.length >= 3 && password.length <= 20;
+}
+
 class UserController {
     async registration(req: Request, res: Response, next: NextFunction) {
         try {
@@ -21,6 +31,17 @@ class UserController {
 
             if (!email || !password) {
                 return next(ApiError.badRequest('Incorrect e-mail or password!'))
+            }
+
+            if (!checkEmail(email)) {
+                console.log('as')
+
+                return next(ApiError.badRequest('Incorrect e-mail!'))
+            }
+
+            if (!checkPassword(password)) {
+                return next(ApiError.badRequest('Incorrect password!\n' +
+                    'Password length must be more than 2 and less than 21.'))
             }
 
             const sameEmail = await User.findOne({where: {email}})
@@ -44,7 +65,7 @@ class UserController {
             const user = await User.findOne({where: {email}})
 
             if (!user) {
-                return next(ApiError.internalError("User is not find!"))
+                return next(ApiError.internalError("User is not found!"))
             }
             console.log('comparing...')
             console.log(user.password)
