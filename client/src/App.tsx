@@ -1,20 +1,20 @@
 import React, {useContext, useEffect, useState} from 'react';
-import {BrowserRouter, useNavigate} from "react-router-dom";
+import {BrowserRouter} from "react-router-dom";
 import AppRouter from "./component/AppRouter";
 import {observer} from "mobx-react-lite";
-import {Context} from "./index";
+import {Context, ContextType, socket} from "./index";
 import {check} from "./http/userApi";
 import {Spinner} from "react-bootstrap";
-import {IUser, UserStoreContextType} from "./store/UserStore";
+import {IUser} from "./store/ContextStore";
 
 const App = observer(() => {
-    const {user} = useContext(Context) as UserStoreContextType
+    const {store} = useContext(Context) as ContextType
     const [loading, setLoading] = useState(true)
-
     useEffect(() => {
         check().then(data => {
-            user.user = data as IUser
-            user.isAuth = true
+            store.user = data as IUser
+            store.isAuth = true
+            socket.emit('login', JSON.stringify({email: store.user.email}))
         }).catch(err => {
             console.log(err.response.data.message)
         }).finally(() => setLoading(false))

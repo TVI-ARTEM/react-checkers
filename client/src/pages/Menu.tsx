@@ -1,7 +1,7 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {observer} from "mobx-react-lite";
-import {Context} from "../index";
-import {IUser, UserStoreContextType} from "../store/UserStore";
+import {Context, ContextType} from "../index";
+import {IRoom, IUser} from "../store/ContextStore";
 import {Button, Col, Container, Form, ListGroup, Modal, Navbar, Row, Stack} from "react-bootstrap";
 import './Menu.css';
 import {useNavigate} from "react-router-dom";
@@ -26,7 +26,7 @@ import {createRoom, joinRoom} from "../http/roomApi";
 
 
 const Menu = observer(() => {
-    const {user} = useContext(Context) as UserStoreContextType
+    const {store} = useContext(Context) as ContextType
 
     const [room_id_join, setRoomIDJoin] = useState('')
     const [room_password_join, setRoomPasswordJoin] = useState('')
@@ -50,7 +50,7 @@ const Menu = observer(() => {
     const [bestPlayer, setBestPlayer] = useState(new Array<{ email: string, count: number }>())
 
     useEffect(() => {
-        if (!user.isAuth) {
+        if (!store.isAuth) {
             navigate(AUTH_ROUTE)
         }
     }, [])
@@ -77,8 +77,8 @@ const Menu = observer(() => {
                         <Button onClick={() => setShowRatings(true)} variant={'light'}
                                 style={{marginLeft: "0.5rem", marginRight: "0.5rem"}}>Ratings</Button>
                         <Button onClick={() => {
-                            user.user = {} as IUser
-                            user.isAuth = false
+                            store.user = {} as IUser
+                            store.isAuth = false
                             localStorage.setItem('token', '')
                             navigate(AUTH_ROUTE)
                         }} variant={'danger'}
@@ -100,10 +100,10 @@ const Menu = observer(() => {
                             <Form onSubmit={async (event) => {
                                 try {
                                     event.preventDefault()
-                                    let data;
-                                    data = await joinRoom(room_id_join, room_password_join);
-                                    console.log(data)
-                                    navigate(GAME_ROUTE)
+                                    await joinRoom(room_id_join, room_password_join).then(data => {
+                                        store.room = data
+                                        navigate(GAME_ROUTE)
+                                    });
                                 } catch (error: any) {
                                     setShowMessage(error.response.data.message)
                                     setShow(true)
@@ -153,11 +153,12 @@ const Menu = observer(() => {
                     <Form className={'align-self-center'} onSubmit={async (event) => {
                         try {
                             event.preventDefault()
-                            let data;
-                            data = await createRoom(room_id, room_password, pc_players, multiplayer, gameMode, difficult);
-                            console.log(data)
-                            setShowCreateRoom(false)
-                            navigate(GAME_ROUTE)
+                            await createRoom(room_id, room_password, pc_players, multiplayer, gameMode, difficult).then(data => {
+                                store.room = data
+                                setShowCreateRoom(false)
+                                navigate(GAME_ROUTE)
+                            })
+
                         } catch (error: any) {
                             setShowMessage(error.response.data.message)
                             setShow(true)

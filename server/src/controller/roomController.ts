@@ -3,6 +3,8 @@ import {Request, Response, NextFunction} from 'express';
 import Game from "../game/Game";
 import jwt_decode from 'jwt-decode'
 
+require("json-circular-stringify");
+
 import {
     COOP_STYLE_COOP_VALUE,
     COOP_STYLE_SOLO_VALUE, DIFFICULT_EASY_VALUE, DIFFICULT_PRO_VALUE,
@@ -50,7 +52,7 @@ const decodeToken = function (token: string) {
     return jwt_decode(token) as IUser
 }
 
-interface IUser{
+interface IUser {
     id: number,
     email: string,
 }
@@ -93,8 +95,7 @@ class RoomController {
 
             game.addRoom(room)
 
-
-            const room_json = JSON.stringify(room)
+            const room_json = JSON.stringify({room_id: room.room_id, room_password: room.room_password})
             return res.status(200).json({room: room_json})
         } catch (e) {
             return next(e)
@@ -107,17 +108,15 @@ class RoomController {
 
             const {id, password} = req.body
 
-            console.log(id)
-            console.log(password)
             const user = decodeToken(req.headers.authorization.split(' ')[1])
-            console.log(user.email)
 
 
             const room = game.getRoom(id, password)
             room.addUser(user.email)
-            const room_json = JSON.stringify(room)
+            const room_json = JSON.stringify({room_id: room.room_id, room_password: room.room_password})
 
-            return res.status(200).json({message: room_json})
+
+            return res.status(200).json({room: room_json})
 
         } catch (e) {
             return next(e)

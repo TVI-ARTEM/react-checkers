@@ -6,6 +6,7 @@ import {
     PC_PLAYERS_0_VALUE
 } from "../utils/consts";
 import Board from "./Board";
+import ApiError from "../error/ApiError";
 
 class Room {
     room_id: string;
@@ -45,13 +46,18 @@ class Room {
         room.coop_style = coop_style
         room.game_mode = game_mode
         room.difficult = difficult
+        room.board.initCells()
         return room
     }
 
     addUser(email: string) {
-        this.queue = this.queue.filter(function (value) {return value !== email})
+        if (this.current_players.includes(email) || this.queue.includes(email)) {
+            throw ApiError.badRequest('You are already in game!')
+        }
         this.queue.push(email)
+    }
 
+    startGame() {
         if (!this.is_playing && this.queue.length >= 4 - this.pc_players) {
             for (let i = 0; i < 4 - this.pc_players; i++) {
                 this.current_players.push(this.queue.shift())
@@ -62,6 +68,18 @@ class Room {
 
             this.is_playing = true
             this.current_player_index = 0
+        }
+    }
+
+    removeUser(email: string) {
+        if (this.current_players.includes(email)) {
+            this.is_playing = false
+            this.current_player_index = 0
+            this.current_players = []
+        }
+
+        else if (this.queue.includes(email)) {
+            this.queue = this.queue.filter((value) => {return value !== email})
         }
     }
 

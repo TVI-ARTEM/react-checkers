@@ -1,6 +1,6 @@
 import React, {useContext, useEffect, useState} from 'react';
-import {Context} from "../index";
-import {UserStoreContextType, IUser} from "../store/UserStore";
+import {Context, ContextType} from "../index";
+import { IUser} from "../store/ContextStore";
 import {observer} from "mobx-react-lite";
 import {useNavigate} from "react-router-dom";
 import { MENU_ROUTE} from "../utils/consts";
@@ -11,7 +11,7 @@ import {login, registration} from "../http/userApi";
 
 const Auth = observer(() => {
 
-    const {user} = useContext(Context) as UserStoreContextType
+    const {store} = useContext(Context) as ContextType
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const state = {
@@ -20,7 +20,7 @@ const Auth = observer(() => {
     const navigate = useNavigate()
 
     useEffect(() => {
-        if (user.isAuth) {
+        if (store.isAuth) {
             navigate(MENU_ROUTE)
         }
     }, [])
@@ -61,8 +61,8 @@ const Auth = observer(() => {
                                                     } else {
                                                         data = await registration(email, password);
                                                     }
-                                                    user.user = data as IUser
-                                                    user.isAuth = true
+                                                    store.user = data as IUser
+                                                    store.isAuth = true
                                                     navigate(MENU_ROUTE)
                                                 } catch (e: any) {
                                                     alert(e.response.data.message)
