@@ -1,5 +1,4 @@
-import {$authHost} from "./index";
-import {IRoom} from "../store/ContextStore";
+import {$authHost, cookie} from "./index";
 
 export const createRoom = async (id: string, password: string, pc_players: string, coop_style: string, game_mode: string, difficult: string) => {
     console.log('createRoom')
@@ -12,11 +11,15 @@ export const createRoom = async (id: string, password: string, pc_players: strin
         difficult: difficult
     })
 
-    return JSON.parse(data.room) as IRoom
+    const room = JSON.parse(data.room) as { room_id: string; room_password: string; }
+    cookie.set('room_id', room.room_id)
+    cookie.set('room_password', room.room_password)
 }
 
 export const joinRoom = async (id: string, password: string) => {
     console.log('joinRoom')
     const {data} = await $authHost.post('api/room/join', {id: id, password: password})
-    return JSON.parse(data.room) as IRoom
+    const room = JSON.parse(data.room) as { room_id: string; room_password: string; }
+    cookie.set('room_id', room.room_id)
+    cookie.set('room_password', room.room_password)
 }

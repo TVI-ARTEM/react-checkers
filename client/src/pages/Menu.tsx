@@ -1,7 +1,7 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {observer} from "mobx-react-lite";
 import {Context, ContextType} from "../index";
-import {IRoom, IUser} from "../store/ContextStore";
+import {IUser} from "../store/ContextStore";
 import {Button, Col, Container, Form, ListGroup, Modal, Navbar, Row, Stack} from "react-bootstrap";
 import './Menu.css';
 import {useNavigate} from "react-router-dom";
@@ -10,7 +10,7 @@ import {
     COOP_STYLE_COOP_VALUE,
     COOP_STYLE_SOLO_VALUE,
     DIFFICULT_EASY_VALUE, DIFFICULT_PRO_VALUE,
-    GAME_MODE_1_KINGS_VALUE, GAME_MODE_2_KINGS_VALUE,
+    GAME_MODE_1_KINGS_VALUE,
     GAME_MODE_3_CHECKERS_VALUE, GAME_MODE_3_KINGS_VALUE,
     GAME_MODE_STANDARD_VALUE,
     GAME_ROUTE,
@@ -23,10 +23,11 @@ import {
 import houseImgPath from "./images/logo.png";
 import {getWinners} from "../http/winnerApi";
 import {createRoom, joinRoom} from "../http/roomApi";
+import {logout} from "../http/userApi";
 
 
 const Menu = observer(() => {
-    const {store} = useContext(Context) as ContextType
+    const {store, socket} = useContext(Context) as ContextType
 
     const [room_id_join, setRoomIDJoin] = useState('')
     const [room_password_join, setRoomPasswordJoin] = useState('')
@@ -76,11 +77,16 @@ const Menu = observer(() => {
                                 style={{marginRight: "0.5rem"}}>Create Room</Button>
                         <Button onClick={() => setShowRatings(true)} variant={'light'}
                                 style={{marginLeft: "0.5rem", marginRight: "0.5rem"}}>Ratings</Button>
-                        <Button onClick={() => {
-                            store.user = {} as IUser
-                            store.isAuth = false
-                            localStorage.setItem('token', '')
-                            navigate(AUTH_ROUTE)
+                        <Button onClick={async () => {
+                            await logout(store.user.email).then(() => {
+                                socket.emit('logout', JSON.stringify({email: store.user.email}))
+                                store.user = {} as IUser
+                                store.isAuth = false
+                                navigate(AUTH_ROUTE)
+                            }).catch(error => {
+                                setShowMessage(error.response.data.message)
+                                setShow(true)
+                            })
                         }} variant={'danger'}
                                 style={{marginLeft: "0.5rem"}}>Logout</Button>
                     </div>
@@ -101,7 +107,6 @@ const Menu = observer(() => {
                                 try {
                                     event.preventDefault()
                                     await joinRoom(room_id_join, room_password_join).then(data => {
-                                        store.room = data
                                         navigate(GAME_ROUTE)
                                     });
                                 } catch (error: any) {
@@ -154,7 +159,6 @@ const Menu = observer(() => {
                         try {
                             event.preventDefault()
                             await createRoom(room_id, room_password, pc_players, multiplayer, gameMode, difficult).then(data => {
-                                store.room = data
                                 setShowCreateRoom(false)
                                 navigate(GAME_ROUTE)
                             })
@@ -205,7 +209,6 @@ const Menu = observer(() => {
                                 <option value={GAME_MODE_STANDARD_VALUE}>Standard</option>
                                 <option value={GAME_MODE_3_CHECKERS_VALUE}>3 Checkers</option>
                                 <option value={GAME_MODE_1_KINGS_VALUE}>1 King</option>
-                                <option value={GAME_MODE_2_KINGS_VALUE}>2 Kings</option>
                                 <option value={GAME_MODE_3_KINGS_VALUE}>3 Kings</option>
                             </select>
                             <label className={'roboto-text-regular'} style={{color: "black"}}>

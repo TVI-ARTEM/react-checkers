@@ -11,7 +11,7 @@ import {login, registration} from "../http/userApi";
 
 const Auth = observer(() => {
 
-    const {store} = useContext(Context) as ContextType
+    const {store, socket} = useContext(Context) as ContextType
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const state = {
@@ -63,6 +63,7 @@ const Auth = observer(() => {
                                                     }
                                                     store.user = data as IUser
                                                     store.isAuth = true
+                                                    socket.emit('login', JSON.stringify({email: store.user.email}))
                                                     navigate(MENU_ROUTE)
                                                 } catch (e: any) {
                                                     alert(e.response.data.message)

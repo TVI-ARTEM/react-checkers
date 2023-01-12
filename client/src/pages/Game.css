@@ -6,11 +6,46 @@
     background-repeat: repeat;
 }
 
-.roboto-text-regular{
+.roboto-text-regular {
     font-family: "Roboto", sans-serif;
     text-align: left;
     font-weight: bold;
     color: white;
 }
+
+
+.board {
+    width: calc(5rem * 6);
+    height: calc(5rem * 6);
+    aspect-ratio: 1;
+    background: rgb(255, 255, 0);
+    border-radius: 4rem;
+
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.diamond {
+    width: 5rem;
+    height: 5rem;
+    aspect-ratio: 1;
+    display: flex;
+    justify-content: center;
+    background-image: url("./images/rhomb.png");
+    background-size: cover;
+    background-repeat: repeat;
+}
+
+.checker {
+    width: 3rem;
+    height: 3rem;
+    aspect-ratio: 1;
+    display: flex;
+    justify-content: center;
+    background-size: cover;
+    background-repeat: repeat;
+}
+
+
 
 

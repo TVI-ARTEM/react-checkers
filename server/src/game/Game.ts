@@ -1,6 +1,7 @@
-import Room from "./Room";
+import Room from "./room/Room";
 import ApiError from "../error/ApiError";
 import {io} from "../index";
+import Player from "./Player";
 
 class Game {
     rooms: Room[] = []
@@ -37,21 +38,26 @@ class Game {
 
     startGame(room: Room) {
         room.startGame()
-        if (!room.is_playing) {
-            return
-        }
+
         for (const currentPlayer of room.current_players) {
-            if (this.users.has(currentPlayer)) {
-                io.to(this.users.get(currentPlayer)).emit('start-game', JSON.stringify({room: room}))
+            console.log(currentPlayer.email)
+            if (this.users.has(currentPlayer.email)) {
+                io.to(this.users.get(currentPlayer.email)).emit('send-game', JSON.stringify(room))
             }
         }
 
+        for (const email of room.queue) {
+            console.log(email)
+            if (this.users.has(email)) {
+                io.to(this.users.get(email)).emit('send-game', JSON.stringify(room))
+            }
+        }
     }
 
-    stopGame(players: string[]) {
+    stopGame(players: Player[]) {
         for (const currentPlayer of players) {
-            if (this.users.has(currentPlayer)) {
-                io.to(this.users.get(currentPlayer)).emit('stop-game')
+            if (this.users.has(currentPlayer.email)) {
+                io.to(this.users.get(currentPlayer.email)).emit('stop-game')
             }
         }
     }
@@ -63,7 +69,9 @@ class Game {
             const prev_players = room.current_players
             room.removeUser(email)
             if (prev_playing !== room.is_playing && prev_playing === true) {
-                this.stopGame(prev_players.filter((value) => {return value !== email}))
+                this.stopGame(prev_players.filter((value) => {
+                    return value.email !== email
+                }))
             }
             if (prev_playing !== room.is_playing && room.is_playing === true) {
                 this.startGame(room)
@@ -77,11 +85,9 @@ class Game {
         for (const [email, id] of this.users) {
             if (id === socket_id) {
                 user_email = email
+                this.users.set(user_email, '')
                 break
             }
-        }
-        if (user_email !== '') {
-            this.removeUser(user_email)
         }
     }
 

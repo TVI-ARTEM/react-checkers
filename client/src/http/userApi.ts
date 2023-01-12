@@ -17,6 +17,12 @@ export const login = async (email: string, password: string) => {
     return jwt_decode(data.token)
 }
 
+export const logout = async (email: string) => {
+    console.log('logout')
+    await $authHost.post('api/user/logout', {email: email})
+    cookie.set('token', '')
+}
+
 export const check = async () => {
     console.log('auth')
     const {data} = await $authHost.get('api/user/auth')

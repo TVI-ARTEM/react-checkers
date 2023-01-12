@@ -42,7 +42,6 @@ class WinnerController {
             const winners = (await GameWinner.findAll({order: [['count', 'DESC']], limit: 10, include: User})).map((winner) => {
                 return {email: winner.user.email, count: winner.count}
             })
-            console.log(winners)
             return res.json({winners: winners})
         } catch (e) {
             return next(e)

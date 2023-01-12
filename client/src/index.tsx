@@ -1,4 +1,4 @@
-import React, {createContext} from 'react';
+import React, {createContext, useEffect} from 'react';
 
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -13,10 +13,11 @@ export type ContextType = {
 
 export const Context = createContext<ContextType | null>(null)
 const url = process.env.REACT_APP_SOCKET_URL || "http://localhost:5050/"
-export const socket = io(url)
+ const socket = io(url)
 const root = ReactDOM.createRoot(
     document.getElementById('root') as HTMLElement
 );
+
 
 root.render(
     <Context.Provider value={{

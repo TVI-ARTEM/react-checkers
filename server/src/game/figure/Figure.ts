@@ -5,6 +5,7 @@ export enum FigureNames {
     FIGURE = "FIGURE",
     CHECKER = "CHECKER",
     KING = "KING",
+    EMPTY = 'EMPTY'
 }
 
 export class Figure {
@@ -12,6 +13,7 @@ export class Figure {
     cell: Cell;
     name: FigureNames;
     id: number;
+    logo: string
 
 
     constructor(color: Colors, cell: Cell) {
@@ -19,6 +21,7 @@ export class Figure {
         this.cell = cell;
         this.cell.figure = this;
         this.name = FigureNames.FIGURE
+        this.logo = ''
         this.id = Math.random()
     }
 

@@ -9,7 +9,6 @@ import {
     COOP_STYLE_COOP_VALUE,
     COOP_STYLE_SOLO_VALUE, DIFFICULT_EASY_VALUE, DIFFICULT_PRO_VALUE,
     GAME_MODE_1_KINGS_VALUE,
-    GAME_MODE_2_KINGS_VALUE,
     GAME_MODE_3_CHECKERS_VALUE, GAME_MODE_3_KINGS_VALUE,
     GAME_MODE_STANDARD_VALUE,
     PC_PLAYERS_0_VALUE,
@@ -17,7 +16,7 @@ import {
     PC_PLAYERS_2_VALUE,
     PC_PLAYERS_3_VALUE
 } from "../utils/consts";
-import Room from "../game/Room";
+import Room from "../game/room/Room";
 
 const game: Game = require('../game/Game')
 
@@ -40,8 +39,7 @@ const check_coop_style = function (coop_style: string) {
 
 const check_game_mode = function (game_mode: string) {
     return game_mode === GAME_MODE_STANDARD_VALUE || game_mode === GAME_MODE_3_CHECKERS_VALUE ||
-        game_mode === GAME_MODE_1_KINGS_VALUE || game_mode === GAME_MODE_2_KINGS_VALUE ||
-        game_mode === GAME_MODE_3_KINGS_VALUE
+        game_mode === GAME_MODE_1_KINGS_VALUE || game_mode === GAME_MODE_3_KINGS_VALUE
 }
 
 const check_difficult = function (difficult: string) {

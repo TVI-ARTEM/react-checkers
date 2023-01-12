@@ -1,6 +1,7 @@
 import Board from "./Board";
 import {Figure} from "./figure/Figure";
 
+
 class Cell {
     board: Board
     readonly x: number
