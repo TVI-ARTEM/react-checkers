@@ -1,15 +1,11 @@
 import Cell from "../Cell";
 import {Colors} from "../Colors";
 import logo from '../images/black.png';
-import {Checker} from "./Checker";
-import {Empty} from "./Empty";
-import {King} from "./King";
 
 export enum FigureNames {
     FIGURE = "FIGURE",
     CHECKER = "CHECKER",
     KING = "KING",
-    EMPTY = 'EMPTY'
 }
 
 export class Figure {
@@ -29,19 +25,24 @@ export class Figure {
         this.logo = ''
     }
 
-    public canMove(target: Cell): boolean {
-        return false
-    }
-
-    public moveFigure(target: Cell) {
+    public getAvailableCells(): Array<{ prevCells: Cell[], cell: Cell }> {
+        return []
     }
 
     protected getLogo(): string {
         return logo;
     }
 
+
     public setLogo() {
         this.logo = this.getLogo()
+    }
+
+    static getDirections(): { x: number, y: number }[] {
+        return [
+            {x: 1, y: 0}, {x: 0, y: 1},
+            {x: -1, y: 0}, {x: 0, y: -1}
+        ]
     }
 
 }

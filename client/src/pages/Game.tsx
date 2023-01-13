@@ -1,25 +1,43 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {observer} from "mobx-react-lite";
 import './Game.css';
-import {Button, Container, Modal, Navbar, Stack} from "react-bootstrap";
+import {Button, Col, Container, ListGroup, Modal, Navbar, Row, Stack} from "react-bootstrap";
 import {useNavigate} from "react-router-dom";
 import {AUTH_ROUTE, MENU_ROUTE} from "../utils/consts";
 import houseImgPath from './images/logo.png'
 import {Context, ContextType} from "../index";
-import IRoom from "../game/room/Room";
+import IRoom, {get_current_player, isKing} from "../game/room/Room";
 import {cookie} from "../http";
 import jsonToClass from "../utils/jsonToClass";
-
-
+import Cell from "../game/Cell";
+import cell from "../game/Cell";
+import {Figure} from "../game/figure/Figure";
+import Player from "../game/Player";
+import {updateWinner} from "../http/winnerApi";
+import {King} from "../game/figure/King";
 
 
 require("json-circular-stringify");
+
 
 const Game = observer(() => {
     const {store, socket} = useContext(Context) as ContextType
     const navigate = useNavigate()
     const [modalShow, setModalShow] = useState(false)
+    const [modalShowWinner, setModalShowWinner] = useState(false)
     const [room, setRoom] = useState<IRoom | null>(null)
+    const [availableCells, setAvailableCells] = useState(new Array<{ prevCells: Cell[], cell: Cell }>())
+    const [selectedCell, setCell] = useState<Cell | null>(null)
+
+    const cellContains = (cell: Cell) => {
+        for (const availableCell of availableCells) {
+            if (availableCell.cell.x === cell.x && availableCell.cell.y === cell.y) {
+                return true
+            }
+        }
+
+        return false
+    }
 
     useEffect(() => {
         if (!store.isAuth) {
@@ -29,12 +47,10 @@ const Game = observer(() => {
 
         socket.on('send-game', (message) => {
             console.log('SEND-GAME');
-            console.log(message);
             const roomJson: IRoom = jsonToClass(message)
-            console.log(roomJson)
 
             setRoom(roomJson)
-
+            setAvailableCells([])
         });
 
         socket.on('stop-game', () => {
@@ -42,12 +58,63 @@ const Game = observer(() => {
             navigate(MENU_ROUTE);
         });
 
+        socket.on('winner', async () => {
+            console.log('WINNER')
+            await updateWinner(store.user.email).then(() => {
+                setModalShowWinner(true)
+            })
+        })
 
         return () => {
             socket.off('send-game')
             socket.off('stop-game')
         }
     }, [])
+
+    function onClickCell(cell: Cell) {
+        return () => {
+            if (room !== null) {
+                const player = get_current_player(room) as Player
+                if (player?.email !== store.user.email || cell.figure && player.color !== cell.figure.color) {
+                    setAvailableCells([])
+                    setCell(null)
+
+                    return
+                }
+            }
+
+            if (cell.figure) {
+                setAvailableCells(cell.figure.getAvailableCells())
+                setCell(cell)
+            } else if (cellContains(cell)) {
+                console.log('Pressed')
+                console.log(selectedCell)
+                for (const availableCell of availableCells) {
+                    if (availableCell.cell.x === cell?.x && availableCell.cell.y === cell.y) {
+                        if (selectedCell?.figure) {
+                            if (isKing(availableCell.cell, selectedCell.figure.color)) {
+                                new King(selectedCell.figure.color, availableCell.cell)
+                            } else {
+                                availableCell.cell.figure = selectedCell.figure
+                                availableCell.cell.figure.cell = availableCell.cell
+                            }
+                        }
+                        for (const prevCell of availableCell.prevCells) {
+                            prevCell.figure = null
+                        }
+
+                        socket.emit('next-step', JSON.stringify(room))
+                        setAvailableCells([])
+                        setCell(null)
+                        break
+                    }
+                }
+            } else {
+                setAvailableCells([])
+                setCell(null)
+            }
+        };
+    }
 
     return (
         <>
@@ -68,27 +135,76 @@ const Game = observer(() => {
                 className={'d-flex justify-content-center align-items-center'}
                 style={{height: window.innerHeight}}
             >
-                <div className={'board'}>
-                    {
-                        room !== null && ((room as IRoom).board.cells).map((row, idx) =>
-                            <React.Fragment key={idx}>
-                                {
-                                    row.map((col, idx) =>
-                                        <div key={idx} className={'diamond align-items-center'}>
-                                            {
-                                                col && col.figure &&
-                                                <div key={idx} className={'checker'} style={{
-                                                    backgroundImage: `url(${col.figure.logo})`
-                                                }}></div>
-                                            }
+                <Row>
+                    <Col>
+                        <ListGroup>
+                            <ListGroup.Item className={'roboto-text-regular'} style={{color: "black"}}>
+                                Queue:
+                            </ListGroup.Item>
+                            {
+                                room?.queue.slice(0, 10).map((item, idx) =>
+                                    <ListGroup.Item className={'roboto-text-regular'} style={{color: "black"}}
+                                                    key={idx}>{item}</ListGroup.Item>
+                                )
+                            }
+                        </ListGroup>
+                    </Col>
+                    <Col>
+                        <div className={'board'}>
+                            {
+                                room !== null && ((room as IRoom).board.cells).map((row, idx) =>
+                                    <React.Fragment key={idx}>
+                                        {
+                                            row.map((cell, idx) =>
+                                                <div key={idx} className={'diamond align-items-center'}
+                                                     onClick={onClickCell(cell)
+                                                     }>
+                                                    {
+                                                        cell.figure &&
+                                                        <div key={idx} className={'checker'} style={{
+                                                            backgroundImage: `url(${cell.figure.logo})`
+                                                        }}
+                                                        ></div>
+                                                    }
+                                                    {
+                                                        cellContains(cell) && <div key={idx} className={'dot'}>
 
-                                        </div>
-                                    )
-                                }
-                            </React.Fragment>
-                        )
-                    }
-                </div>
+                                                        </div>
+                                                    }
+
+                                                </div>
+                                            )
+                                        }
+                                    </React.Fragment>
+                                )
+                            }
+                        </div>
+                    </Col>
+                    <Col>
+                        <ListGroup>
+                            <ListGroup.Item className={'roboto-text-regular'} style={{
+                                color: "black"
+                            }}>
+                                Current Players:
+                            </ListGroup.Item>
+                            {
+                                room?.current_players.slice(0, 10).map((item, idx) =>
+                                    <ListGroup.Item className={'roboto-text-regular'} style={
+                                        {
+                                            color: room !== null && (get_current_player(room) as Player).email === item.email ?
+                                                "red" : "black"
+                                        }
+                                    } key={idx}>
+                                        {item.email}: {item.color} {
+                                        room !== null && (get_current_player(room) as Player).email === store.user.email && store.user.email === item.email ? " - Your turn" : ""
+                                    }
+                                    </ListGroup.Item>
+                                )
+                            }
+                        </ListGroup>
+                    </Col>
+                </Row>
+
             </Container>
 
             <Modal show={modalShow} onHide={() => setModalShow(false)} aria-labelledby="contained-modal-title-vcenter"
@@ -126,6 +242,29 @@ const Game = observer(() => {
                 </Modal.Body>
             </Modal>
 
+            <Modal show={modalShowWinner} onHide={() => {
+                setModalShowWinner(false)
+                cookie.set('room_id', "")
+                cookie.set('room_password', "")
+                navigate(MENU_ROUTE)
+            }} aria-labelledby="contained-modal-title-vcenter"
+                   centered>
+                <Modal.Header closeButton>
+                    <Modal.Title className={'roboto-text-regular'} style={{color: 'black'}}>Winner</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className={'roboto-text-regular'} style={{color: 'black'}}>Congratulations! You're winner!
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="danger" onClick={() => {
+                        setModalShowWinner(false)
+                        cookie.set('room_id', "")
+                        cookie.set('room_password', "")
+                        navigate(MENU_ROUTE)
+                    }}>OK</Button>
+                </Modal.Footer>
+            </Modal>
         </>
     );
 });

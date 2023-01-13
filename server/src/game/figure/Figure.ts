@@ -5,7 +5,6 @@ export enum FigureNames {
     FIGURE = "FIGURE",
     CHECKER = "CHECKER",
     KING = "KING",
-    EMPTY = 'EMPTY'
 }
 
 export class Figure {
@@ -25,9 +24,14 @@ export class Figure {
         this.id = Math.random()
     }
 
-    canMove(target: Cell) : boolean {
-        return false
+    public getAvailableCells(): Array<{ prevCells: Cell[], cell: Cell }> {
+        return []
     }
 
-    moveFigure(target: Cell) {}
+    static getDirections(): { x: number, y: number }[] {
+        return [
+            {x: 1, y: 0}, {x: 0, y: 1},
+            {x: -1, y: 0}, {x: 0, y: -1}
+        ]
+    }
 }

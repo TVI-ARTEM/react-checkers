@@ -39,6 +39,11 @@ class Game {
     startGame(room: Room) {
         room.startGame()
 
+        while (room.current_players.length > 0 && room.currentPlayer().email.includes('PC_PLAYER')) {
+            room.aiStep()
+            room.nextPlayer()
+        }
+
         for (const currentPlayer of room.current_players) {
             console.log(currentPlayer.email)
             if (this.users.has(currentPlayer.email)) {
@@ -61,6 +66,8 @@ class Game {
             }
         }
     }
+
+
 
 
     removeUser(email: string) {

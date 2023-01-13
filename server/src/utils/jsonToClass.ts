@@ -21,8 +21,7 @@ export default function jsonToClass(json: string) {
             const cell = new_board.cells.at(row).at(column)
             // @ts-ignore
             cell.figure = createFigure(figure.color, figure.name, cell)
-            // @ts-ignore
-            cell.figure.setLogo()
+            cell.figure.color
         }
     }
     json_parsed.board = new_board

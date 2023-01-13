@@ -1,6 +1,8 @@
 import Board from "../Board";
 import Player from "../Player";
 import Settings from "./Settings";
+import {Colors} from "../Colors";
+import Cell from "../Cell";
 
 
 export default interface IRoom {
@@ -16,4 +18,18 @@ export default interface IRoom {
 
 export const get_current_player = (room: IRoom) => {
     return room.current_players.at(room.current_player_index)
+}
+
+export const isKing = (cell: Cell, color: Colors) => {
+    switch (color) {
+        case Colors.WHITE:
+            return cell.x === 5 && cell.y === 5 || cell.x === 0 && cell.y === 5 || cell.x === 5 && cell.y === 0;
+        case Colors.BLACK:
+            return cell.x === 5 && cell.y === 5 || cell.x === 0 && cell.y === 0 || cell.x === 5 && cell.y === 0;
+        case Colors.RED:
+            return cell.x === 5 && cell.y === 5 || cell.x === 0 && cell.y === 5 || cell.x === 0 && cell.y === 0;
+        case Colors.GREEN:
+            return cell.x === 0 && cell.y === 0 || cell.x === 0 && cell.y === 5 || cell.x === 5 && cell.y === 0;
+    }
+    return true
 }

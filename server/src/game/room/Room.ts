@@ -3,6 +3,10 @@ import ApiError from "../../error/ApiError";
 import {Colors} from "../Colors";
 import Player from "../Player";
 import Settings from "./Settings";
+import {DIFFICULT_EASY_VALUE} from "../../utils/consts";
+import {Figure} from "../figure/Figure";
+import Cell from "../Cell";
+import {King} from "../figure/King";
 
 
 export default class Room {
@@ -45,21 +49,28 @@ export default class Room {
         this.queue.push(email)
     }
 
+
+    private static getRandomInt(max) {
+        return Math.floor(Math.random() * max);
+    }
+
     startGame() {
         const colors = [Colors.WHITE, Colors.RED, Colors.GREEN, Colors.BLACK]
+
         if (!this.is_playing && this.queue.length >= 4 - this.room_settings.pc_players) {
             for (let i = 0; i < 4 - this.room_settings.pc_players; i++) {
                 this.current_players.push(new Player(
                     this.queue.shift(),
-                    colors.at(this.current_players.length - 1)
+                    colors.at(this.current_players.length)
                 ))
             }
             for (let i = 0; i < this.room_settings.pc_players; i++) {
                 this.current_players.push(new Player(
                     `PC_PLAYER ${this.current_players.length}`,
-                    colors.at(this.current_players.length - 1)
+                    colors.at(this.current_players.length)
                 ))
             }
+
 
             this.is_playing = true
             this.current_player_index = 0
@@ -95,5 +106,108 @@ export default class Room {
         }
 
         return false
+    }
+
+    private aiEasy() {
+        const current_player = this.currentPlayer()
+
+        const figures: Figure[] = []
+
+        for (const row of this.board.cells) {
+            for (const cell of row) {
+                if (cell.figure && cell.figure.color === current_player.color) {
+                    figures.push(cell.figure)
+                }
+            }
+        }
+        let iteration = -1
+        if (figures.length > 0) {
+            while (true) {
+                iteration += 1
+                if (iteration > 100) {
+                    this.aiPro()
+                    return
+                }
+                const figure = figures.at(Room.getRandomInt(figures.length))
+                const availablePaths = figure.getAvailableCells()
+                if (availablePaths.length === 0) {
+                    continue
+                }
+                const path = availablePaths.at(Room.getRandomInt(availablePaths.length))
+
+                if (Room.isKing(path.cell, figure.color)) {
+                    new King(figure.color, path.cell)
+                } else {
+                    path.cell.figure = figure
+                    figure.cell = path.cell
+                }
+
+                for (const prevCell of path.prevCells) {
+                    prevCell.figure = null
+                }
+
+                break
+            }
+
+        }
+    }
+
+    private aiPro() {
+        const current_player = this.currentPlayer()
+
+        const figures: Figure[] = []
+
+        for (const row of this.board.cells) {
+            for (const cell of row) {
+                if (cell.figure && cell.figure.color === current_player.color) {
+                    figures.push(cell.figure)
+                }
+            }
+        }
+        let bestPath: { prevCells: Cell[], cell: Cell } = null
+        let bestFigure: Figure = null
+        for (const figure of figures) {
+            for (const availableCell of figure.getAvailableCells()) {
+                if (bestPath === null || bestPath.prevCells.length < availableCell.prevCells.length) {
+                    bestPath = availableCell
+                    bestFigure = figure
+                }
+            }
+        }
+
+        if (bestPath !== null) {
+            if (Room.isKing(bestPath.cell, bestFigure.color)) {
+                new King(bestFigure.color, bestPath.cell)
+            } else {
+                bestPath.cell.figure = bestFigure
+                bestFigure.cell = bestPath.cell
+            }
+
+            for (const prevCell of bestPath.prevCells) {
+                prevCell.figure = null
+            }
+        }
+    }
+
+    private static isKing(cell: Cell, color: Colors): boolean {
+        switch (color) {
+            case Colors.WHITE:
+                return cell.x === 5 && cell.y === 5 || cell.x === 0 && cell.y === 5 || cell.x === 5 && cell.y === 0;
+            case Colors.BLACK:
+                return cell.x === 5 && cell.y === 5 || cell.x === 0 && cell.y === 0 || cell.x === 5 && cell.y === 0;
+            case Colors.RED:
+                return cell.x === 5 && cell.y === 5 || cell.x === 0 && cell.y === 5 || cell.x === 0 && cell.y === 0;
+            case Colors.GREEN:
+                return cell.x === 0 && cell.y === 0 || cell.x === 0 && cell.y === 5 || cell.x === 5 && cell.y === 0;
+        }
+        return true
+    }
+
+    public aiStep() {
+        if (this.room_settings.difficult === DIFFICULT_EASY_VALUE) {
+            this.aiEasy()
+        } else {
+            this.aiPro()
+        }
     }
 }

@@ -2,6 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import {Sequelize} from "sequelize";
 import Game from './game/Game';
+import Room from "./game/room/Room";
+import jsonToClass from "./utils/jsonToClass";
+import {Colors} from "./game/Colors";
+import {COOP_STYLE_COOP_VALUE} from "./utils/consts";
 
 require('dotenv').config()
 const game: Game = require('./game/Game')
@@ -86,10 +90,64 @@ io.on("connection", (socket) => {
                 console.log("STOP_GAME")
                 game.stopGame(players.filter(value => {return value.email !== msg.email}))
             }
+            game.startGame(room)
         } catch (error) {
             errorHandlerSocket(error, socket)
         }
     })
+
+    socket.on('next-step', (message) => {
+        try {
+            console.log('NEXT_STEP')
+            const parsed_room = jsonToClass(message)
+            const room = game.getRoom(parsed_room.room_id, parsed_room.room_password)
+            room.board = parsed_room.board
+
+
+            const colors:Colors[] = []
+
+            for (const row of room.board.cells) {
+                for (const cell of row) {
+                    if(cell.figure && !colors.includes(cell.figure.color)){
+                        colors.push(cell.figure.color)
+                    }
+                }
+            }
+
+            //TODO:ДВА ПОБЕДИТЕЛЯ
+            if (colors.length === 1) {
+                const player = room.current_players.find(value => value.color === colors.at(0))
+                const players = room.current_players
+                socket.to(game.getUser(player.email)).emit('winner')
+                room.removeUser(player.email)
+                game.stopGame(players.filter(value => {
+                    return value.email !== player.email
+                }))
+            } else if (colors.length === 2 && room.room_settings.coop_style === COOP_STYLE_COOP_VALUE) {
+
+            } else {
+                while (true) {
+                    room.nextPlayer()
+                    if (!colors.includes(room.currentPlayer().color)) {
+                        continue
+                    }
+
+                    if (room.currentPlayer().email.includes("PC_PLAYER")) {
+                        room.aiStep()
+                        continue
+                    }
+
+                    break
+                }
+            }
+
+            game.startGame(room)
+        } catch (error) {
+            console.log(error)
+            errorHandlerSocket(error, socket)
+        }
+    })
+
 })
 
 const start = async () => {
