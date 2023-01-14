@@ -10,25 +10,15 @@ export class King extends Figure {
 
     public getAvailableCells(): Array<{ prevCells: Cell[], cell: Cell }> {
         const availableCells: { prevCells: Cell[], cell: Cell }[] = []
-        this.getAvailableCellsInternal(this.cell, {prevCells: [], cell: this.cell}, availableCells, this.direction())
+        this.getAvailableCellsInternal(this.cell, {
+            prevCells: [],
+            cell: this.cell
+        }, availableCells, Figure.getDirections(), false)
         return availableCells;
     }
 
-    private direction(): { x: number, y: number }[] {
-        switch (this.color) {
-            case Colors.WHITE:
-                return [{x: 1, y: 0}, {x: 0, y: 1}]
-            case Colors.BLACK:
-                return [{x: 1, y: 0}, {x: 0, y: -1}]
-            case Colors.RED:
-                return [{x: -1, y: 0}, {x: 0, y: 1}]
-            case Colors.GREEN:
-                return [{x: -1, y: 0}, {x: 0, y: -1}]
-        }
-    }
 
-    protected getAvailableCellsInternal(origin: Cell, prev: { prevCells: Cell[], cell: Cell }, availableCells: { prevCells: Cell[], cell: Cell }[], directions: { x: number, y: number }[]) {
-
+    protected getAvailableCellsInternal(origin: Cell, prev: { prevCells: Cell[], cell: Cell }, availableCells: { prevCells: Cell[], cell: Cell }[], directions: { x: number, y: number }[], isLet: boolean) {
         for (const direction of directions) {
             const possibleCell = origin.board.getCell(prev.cell.x + direction.x, prev.cell.y + direction.y)
             if (possibleCell === null) {
@@ -41,7 +31,6 @@ export class King extends Figure {
             const possiblePath = {prevCells: possiblePrevCells, cell: possibleCell}
 
             if (possibleCell.figure !== null) {
-
                 if (origin.figure !== null && origin.figure.color === possibleCell.figure.color) {
                     continue
                 }
@@ -69,14 +58,17 @@ export class King extends Figure {
                 const possibleNextPath = {prevCells: possibleNextPrevCells, cell: nextPossibleCell}
                 const prevAvailable = [...availableCells]
                 console.log(newDirections)
-                this.getAvailableCellsInternal(origin, possibleNextPath, availableCells, newDirections)
+                this.getAvailableCellsInternal(origin, possibleNextPath, availableCells, newDirections, true)
                 console.log('RECURSION')
                 if (prevAvailable.length === availableCells.length) {
                     availableCells.push(possibleNextPath)
                 }
-            } else if (prev.cell.x == origin.x && prev.cell.y == origin.y) {
+
+            } else if (!isLet) {
                 availableCells.push(possiblePath)
+                this.getAvailableCellsInternal(origin, possiblePath, availableCells, [direction], isLet)
             }
+
         }
     }
 }

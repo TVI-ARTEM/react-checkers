@@ -67,6 +67,14 @@ class Game {
         }
     }
 
+    stopGameNormal(players: Player[], winner_string: string) {
+        for (const currentPlayer of players) {
+            if (this.users.has(currentPlayer.email)) {
+                io.to(this.users.get(currentPlayer.email)).emit('stop-game-normal', winner_string)
+            }
+        }
+    }
+
 
 
 

@@ -2,10 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import {Sequelize} from "sequelize";
 import Game from './game/Game';
-import Room from "./game/room/Room";
 import jsonToClass from "./utils/jsonToClass";
 import {Colors} from "./game/Colors";
 import {COOP_STYLE_COOP_VALUE} from "./utils/consts";
+import Player from "./game/Player";
 
 require('dotenv').config()
 const game: Game = require('./game/Game')
@@ -88,7 +88,9 @@ io.on("connection", (socket) => {
 
             if (isIncluded) {
                 console.log("STOP_GAME")
-                game.stopGame(players.filter(value => {return value.email !== msg.email}))
+                game.stopGame(players.filter(value => {
+                    return value.email !== msg.email
+                }))
             }
             game.startGame(room)
         } catch (error) {
@@ -103,46 +105,97 @@ io.on("connection", (socket) => {
             const room = game.getRoom(parsed_room.room_id, parsed_room.room_password)
             room.board = parsed_room.board
 
+            while (true) {
+                const colors: Colors[] = []
 
-            const colors:Colors[] = []
-
-            for (const row of room.board.cells) {
-                for (const cell of row) {
-                    if(cell.figure && !colors.includes(cell.figure.color)){
-                        colors.push(cell.figure.color)
+                for (const row of room.board.cells) {
+                    for (const cell of row) {
+                        if (cell.figure && !colors.includes(cell.figure.color)) {
+                            colors.push(cell.figure.color)
+                        }
                     }
                 }
-            }
-
-            //TODO:ДВА ПОБЕДИТЕЛЯ
-            if (colors.length === 1) {
-                const player = room.current_players.find(value => value.color === colors.at(0))
-                const players = room.current_players
-                socket.to(game.getUser(player.email)).emit('winner')
-                room.removeUser(player.email)
-                game.stopGame(players.filter(value => {
-                    return value.email !== player.email
-                }))
-            } else if (colors.length === 2 && room.room_settings.coop_style === COOP_STYLE_COOP_VALUE) {
-
-            } else {
-                while (true) {
-                    room.nextPlayer()
-                    if (!colors.includes(room.currentPlayer().color)) {
-                        continue
+                console.log(colors)
+                if (colors.length === 1) {
+                    const player = room.current_players.find(value => value.color === colors.at(0))
+                    const players = room.current_players
+                    console.log(player)
+                    if (game.users.has(player.email)) {
+                        console.log('stoping1')
+                        console.log(game.getUser(player.email))
+                        io.to(game.getUser(player.email)).emit('winner')
+                        room.removeUser(player.email)
                     }
-
-                    if (room.currentPlayer().email.includes("PC_PLAYER")) {
-                        room.aiStep()
-                        continue
-                    }
+                    console.log('stoping2')
+                    game.stopGameNormal(players.filter(value => {
+                        return value.email !== player.email
+                    }), player.email)
 
                     break
+                } else if (colors.length === 2 && room.room_settings.coop_style === COOP_STYLE_COOP_VALUE) {
+                    const current_left_players: Player[] = []
+                    for (const color of colors) {
+                        for (const currentPlayer of room.current_players) {
+                            if (currentPlayer.color === color) {
+                                current_left_players.push(currentPlayer)
+                            }
+                        }
+                    }
+
+                    const union = current_left_players.at(0).union
+                    let flag = true
+                    for (const currentLeftPlayer of current_left_players) {
+                        if (currentLeftPlayer.union !== union) {
+                            flag = false
+                            break
+                        }
+                    }
+
+                    if (flag) {
+                        const players = room.current_players.filter(value => {
+                            for (const currentLeftPlayer of current_left_players) {
+                                if (currentLeftPlayer.email === value.email) {
+                                    return false
+                                }
+                            }
+
+                            return true
+                        })
+
+                        for (const currentLeftPlayer of current_left_players) {
+                            if (game.users.has(currentLeftPlayer.email)) {
+                                io.to(game.getUser(currentLeftPlayer.email)).emit('winner')
+                                room.removeUser(currentLeftPlayer.email)
+                            }
+                        }
+
+
+                        game.stopGameNormal(players, current_left_players.map(it => {return it.email}).join(', '))
+
+
+                        break
+                    }
                 }
+
+                room.nextPlayer()
+                if (!colors.includes(room.currentPlayer().color)) {
+                    continue
+                }
+
+                if (room.currentPlayer().email.includes("PC_PLAYER")) {
+                    room.aiStep()
+                    continue
+                }
+
+                console.log(room.currentPlayer())
+
+                break
             }
 
+
             game.startGame(room)
-        } catch (error) {
+        } catch
+            (error) {
             console.log(error)
             errorHandlerSocket(error, socket)
         }

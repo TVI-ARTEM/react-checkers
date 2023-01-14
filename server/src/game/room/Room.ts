@@ -3,7 +3,7 @@ import ApiError from "../../error/ApiError";
 import {Colors} from "../Colors";
 import Player from "../Player";
 import Settings from "./Settings";
-import {DIFFICULT_EASY_VALUE} from "../../utils/consts";
+import {COOP_STYLE_COOP_VALUE, DIFFICULT_EASY_VALUE} from "../../utils/consts";
 import {Figure} from "../figure/Figure";
 import Cell from "../Cell";
 import {King} from "../figure/King";
@@ -61,19 +61,21 @@ export default class Room {
             for (let i = 0; i < 4 - this.room_settings.pc_players; i++) {
                 this.current_players.push(new Player(
                     this.queue.shift(),
-                    colors.at(this.current_players.length)
+                    colors.at(this.current_players.length),
+                    this.room_settings.coop_style === COOP_STYLE_COOP_VALUE ? (this.current_players.length % 2 == 0 ? "1 union" : "2 union") : ""
                 ))
             }
             for (let i = 0; i < this.room_settings.pc_players; i++) {
                 this.current_players.push(new Player(
                     `PC_PLAYER ${this.current_players.length}`,
-                    colors.at(this.current_players.length)
+                    colors.at(this.current_players.length),
+                    this.room_settings.coop_style === COOP_STYLE_COOP_VALUE ? (this.current_players.length % 2 == 0 ? "1 union" : "2 union") : ""
                 ))
             }
 
 
             this.is_playing = true
-            this.current_player_index = 0
+            this.current_player_index = Room.getRandomInt(this.current_players.length)
         }
     }
 
@@ -82,6 +84,8 @@ export default class Room {
             this.is_playing = false
             this.current_player_index = 0
             this.current_players = []
+            this.board.initCells()
+            this.board.initFigures()
         } else if (this.queue.includes(email)) {
             this.queue = this.queue.filter((value) => {
                 return value !== email

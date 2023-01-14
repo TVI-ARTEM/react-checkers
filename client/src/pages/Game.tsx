@@ -6,12 +6,11 @@ import {useNavigate} from "react-router-dom";
 import {AUTH_ROUTE, MENU_ROUTE} from "../utils/consts";
 import houseImgPath from './images/logo.png'
 import {Context, ContextType} from "../index";
-import IRoom, {get_current_player, isKing} from "../game/room/Room";
+import IRoom, {get_current_player, get_player, isKing} from "../game/room/Room";
 import {cookie} from "../http";
 import jsonToClass from "../utils/jsonToClass";
 import Cell from "../game/Cell";
-import cell from "../game/Cell";
-import {Figure} from "../game/figure/Figure";
+
 import Player from "../game/Player";
 import {updateWinner} from "../http/winnerApi";
 import {King} from "../game/figure/King";
@@ -25,6 +24,8 @@ const Game = observer(() => {
     const navigate = useNavigate()
     const [modalShow, setModalShow] = useState(false)
     const [modalShowWinner, setModalShowWinner] = useState(false)
+    const [modalShowWinnerAnother, setModalShowWinnerAnother] = useState(false)
+    const [winnerEmail, setWinnerEmail] = useState('')
     const [room, setRoom] = useState<IRoom | null>(null)
     const [availableCells, setAvailableCells] = useState(new Array<{ prevCells: Cell[], cell: Cell }>())
     const [selectedCell, setCell] = useState<Cell | null>(null)
@@ -63,6 +64,12 @@ const Game = observer(() => {
             await updateWinner(store.user.email).then(() => {
                 setModalShowWinner(true)
             })
+        })
+
+        socket.on('stop-game-normal', (msg) => {
+            console.log('STOP-GAME-NORMAL')
+            setWinnerEmail(msg)
+            setModalShowWinnerAnother(true)
         })
 
         return () => {
@@ -195,9 +202,15 @@ const Game = observer(() => {
                                                 "red" : "black"
                                         }
                                     } key={idx}>
-                                        {item.email}: {item.color} {
-                                        room !== null && (get_current_player(room) as Player).email === store.user.email && store.user.email === item.email ? " - Your turn" : ""
-                                    }
+                                        {item.email}: {item.color}
+                                        {
+                                            room !== null && get_player(room, item.email)?.union !== '' ? ` - ${get_player(room, item.email)?.union}` : ""
+                                        }
+                                        {
+                                            room !== null &&
+                                            (get_current_player(room) as Player).email === store.user.email &&
+                                            store.user.email === item.email ? " - Your turn" : ""
+                                        }
                                     </ListGroup.Item>
                                 )
                             }
@@ -259,6 +272,31 @@ const Game = observer(() => {
                 <Modal.Footer>
                     <Button variant="danger" onClick={() => {
                         setModalShowWinner(false)
+                        cookie.set('room_id', "")
+                        cookie.set('room_password', "")
+                        navigate(MENU_ROUTE)
+                    }}>OK</Button>
+                </Modal.Footer>
+            </Modal>
+
+
+            <Modal show={modalShowWinnerAnother} onHide={() => {
+                setModalShowWinnerAnother(false)
+                cookie.set('room_id', "")
+                cookie.set('room_password', "")
+                navigate(MENU_ROUTE)
+            }} aria-labelledby="contained-modal-title-vcenter"
+                   centered>
+                <Modal.Header closeButton>
+                    <Modal.Title className={'roboto-text-regular'} style={{color: 'black'}}>Winner</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className={'roboto-text-regular'} style={{color: 'black'}}>Winner: {winnerEmail}
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="danger" onClick={() => {
+                        setModalShowWinnerAnother(false)
                         cookie.set('room_id', "")
                         cookie.set('room_password', "")
                         navigate(MENU_ROUTE)

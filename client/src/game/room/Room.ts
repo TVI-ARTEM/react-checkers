@@ -20,6 +20,16 @@ export const get_current_player = (room: IRoom) => {
     return room.current_players.at(room.current_player_index)
 }
 
+export const get_player = (room: IRoom, email: String) => {
+    for (const player of room.current_players) {
+        if (player.email === email) {
+            return player
+        }
+    }
+
+    return null
+}
+
 export const isKing = (cell: Cell, color: Colors) => {
     switch (color) {
         case Colors.WHITE:

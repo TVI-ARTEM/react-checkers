@@ -19,6 +19,7 @@ class Board {
     }
 
     public initCells() {
+        this.cells = []
         for (let i = 0; i < 6; i++) {
             const row: Cell[] = []
             for (let j = 0; j < 6; j++) {
